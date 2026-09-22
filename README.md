@@ -4,6 +4,17 @@ Next.js (App Router) frontend for Placement Hub: separate portals for **students
 **placement cell**, talking to the [placementhub-backend](https://github.com/noobdivya/placementhub-backend) API.
 
 Live stack: **this app on [Vercel](https://vercel.com)** → **[placementhub-backend](https://github.com/noobdivya/placementhub-backend) on [Render](https://render.com)** → **[Neon](https://neon.tech)** (Postgres).
+Live site: **[placementhub-sepia.vercel.app](https://placementhub-sepia.vercel.app)**.
+
+## Screenshots
+
+| Landing page | Sign in |
+|---|---|
+| ![Landing page](docs/screenshots/landing.png) | ![Sign in](docs/screenshots/login.png) |
+
+| Placement cell — dashboard | Placement cell — students |
+|---|---|
+| ![Placement cell dashboard](docs/screenshots/placementcell-dashboard.png) | ![Students table](docs/screenshots/placementcell-students.png) |
 
 ## Stack
 
