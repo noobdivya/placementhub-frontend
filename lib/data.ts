@@ -14,7 +14,7 @@ export type ApplicationStage = Stage | "Withdrawn";
 export type StudentStatus = "Placed" | "In process" | "Unplaced";
 
 export const STAGES: Stage[] = ["Applied", "Shortlisted", "Interview", "Offered", "Rejected"];
-export const BRANCHES = ["CSE", "IT", "ECE", "EEE", "Mechanical", "Civil"] as const;
+export const BRANCHES = ["CSE", "IT", "ECE", "EEE", "Mechanical", "Civil", "BBA", "BCA", "MBA"] as const;
 
 export interface Page<T> {
   items: T[];
