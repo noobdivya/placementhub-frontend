@@ -1,10 +1,11 @@
 # Placement Hub — frontend
 
+**Live site: [placementhub-sepia.vercel.app](https://placementhub-sepia.vercel.app)**
+
 Next.js (App Router) frontend for Placement Hub: separate portals for **students**, **companies** and the
 **placement cell**, talking to the [placementhub-backend](https://github.com/noobdivya/placementhub-backend) API.
 
-Live stack: **this app on [Vercel](https://vercel.com)** → **[placementhub-backend](https://github.com/noobdivya/placementhub-backend) on [Render](https://render.com)** → **[Neon](https://neon.tech)** (Postgres).
-Live site: **[placementhub-sepia.vercel.app](https://placementhub-sepia.vercel.app)**.
+Live stack: this app on [Vercel](https://vercel.com) → [placementhub-backend](https://github.com/noobdivya/placementhub-backend) on [Render](https://render.com) → [Neon](https://neon.tech) (Postgres).
 
 ## Screenshots
 
@@ -73,56 +74,7 @@ no authorization logic beyond that guard; the API is the source of truth for wha
 Auth state: the access token is kept in memory only (never `localStorage`); the refresh token is an `httpOnly`
 cookie set by the backend, scoped to its own `/auth` path, sent automatically via `credentials: "include"`. This
 is why the backend's cookie settings (`COOKIE_SAMESITE`, `COOKIE_SECURE`) matter once frontend and backend are
-on different domains — see the deployment section below.
-
-## Deployment
-
-### Vercel
-
-1. Sign in at [vercel.com](https://vercel.com) → **Add New...** → **Project** → import the `placementhub-frontend`
-   GitHub repo.
-2. Framework preset: **Next.js** (auto-detected). Root directory: leave as `.`. Build/output/install commands:
-   leave the defaults (`next build`, `.next`, `npm install`).
-3. Before the first deploy, expand **Environment Variables** and add:
-
-   | Key | Value | Environments |
-   |---|---|---|
-   | `NEXT_PUBLIC_API_URL` | `https://<your-backend>.onrender.com` (from deploying [the backend](https://github.com/noobdivya/placementhub-backend#2-api--render) first) | Production, Preview, Development |
-
-   If you haven't deployed the backend yet, use a placeholder now and see step 5.
-4. **Deploy.** Vercel builds and assigns a URL like `https://placementhub-frontend.vercel.app` (Vercel may
-   suffix it, e.g. `-<random>.vercel.app`, if the name is taken — use whatever the dashboard shows as the
-   **Production** domain).
-5. Go back to the [backend on Render](https://github.com/noobdivya/placementhub-backend#2-api--render) and set its `FRONTEND_URL` and
-   `CORS_ALLOWED_ORIGINS` to this exact Vercel domain (`https://...`, no trailing slash), then redeploy the
-   backend. If you used a placeholder `NEXT_PUBLIC_API_URL` in step 3, fix it in Vercel's **Project → Settings →
-   Environment Variables** now and trigger a redeploy (**Deployments → ⋯ → Redeploy**) so the correct URL is
-   baked into the build.
-6. Open the Vercel URL and confirm login works end-to-end (bootstrap admin credentials are in the backend's
-   `BOOTSTRAP_ADMIN_*` env vars) — a failed login with a CORS error in the browser console almost always means
-   step 5 wasn't done or doesn't match exactly (scheme, host, and **no trailing slash**, all three must match).
-
-### Preview deployments
-
-Every PR/branch gets its own `https://placementhub-frontend-<hash>-<team>.vercel.app` URL. Those won't work
-against the API until they're also in the backend's `CORS_ALLOWED_ORIGINS` — either add a wildcard pattern your
-setup supports, or treat preview deploys as frontend-only (they'll build and render fine; authenticated calls to
-the API will fail CORS until added). For most single-college deployments this doesn't matter — just deploy from
-`main`.
-
-### Custom domain
-
-Vercel: **Project → Settings → Domains**. After adding one, update the backend's `FRONTEND_URL` /
-`CORS_ALLOWED_ORIGINS` to the custom domain (not the `.vercel.app` one) and redeploy the backend.
-
-### Verifying
-
-```bash
-curl -I https://<your-app>.vercel.app          # 200
-```
-
-Then load the site, open DevTools → Network, and log in — the `POST /auth/login` request should go to your
-Render URL and come back `200` with no CORS error.
+on different domains.
 
 ## Notes
 
