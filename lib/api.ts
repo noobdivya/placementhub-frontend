@@ -189,9 +189,15 @@ export const api = {
   },
 };
 
-/** Unauthenticated read used by public pages (also safe on the server). */
+/**
+ * Unauthenticated read used by public pages (also safe on the server). Bounded to 8s: this
+ * runs during Next.js static generation (build time) as well as ISR revalidation, and an
+ * unbounded fetch against a cold/sleeping backend (e.g. Render's free tier) would otherwise
+ * hang past Vercel's per-page build timeout and fail the whole deploy. Callers already treat
+ * a rejected promise as "backend unavailable, fall back to defaults" (see app/page.tsx).
+ */
 export async function publicGet<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, init);
+  const res = await fetch(`${API_URL}${path}`, { signal: AbortSignal.timeout(8_000), ...init });
   if (!res.ok) throw await toError(res);
   return (await res.json()) as T;
 }
