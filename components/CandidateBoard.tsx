@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Icon } from "./icons";
+import RoundStatusModal from "./RoundStatusModal";
 import { Avatar, Badge, ErrorState, Notice, ProgressBar, Spinner, stageTone } from "./ui";
 import { api, errorMessage } from "@/lib/api";
 import { formatDate, STAGES, type Candidate, type Job, type Stage } from "@/lib/data";
@@ -14,6 +15,7 @@ export default function CandidateBoard({ initialJobId }: { initialJobId?: string
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [flash, setFlash] = useState<string | null>(null);
+  const [roundsFor, setRoundsFor] = useState<Candidate | null>(null);
 
   const jobs = useFetch<{ items: Job[] }>("/company/jobs");
   const cands = useFetch<{ items: Candidate[] }>("/company/candidates", { jobId: jobId === "all" ? undefined : jobId });
@@ -83,6 +85,9 @@ export default function CandidateBoard({ initialJobId }: { initialJobId?: string
                                 {c.branch} · {c.role}
                               </p>
                             </div>
+                            <button className="btn-ghost !px-1.5 !py-1" title="Selection rounds" aria-label={`View selection rounds for ${c.name}`} onClick={() => setRoundsFor(c)}>
+                              <Icon name="calendar" className="size-4" />
+                            </button>
                             {c.hasResume && (
                               <button
                                 className="btn-ghost !px-1.5 !py-1"
@@ -144,6 +149,7 @@ export default function CandidateBoard({ initialJobId }: { initialJobId?: string
           </div>
         </div>
       )}
+      {roundsFor && <RoundStatusModal candidate={roundsFor} onClose={() => setRoundsFor(null)} />}
     </>
   );
 }

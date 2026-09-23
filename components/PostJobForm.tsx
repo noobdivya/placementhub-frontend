@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Icon } from "./icons";
+import RoundsEditor from "./RoundsEditor";
 import { ErrorState, Notice, Spinner } from "./ui";
 import { api, ApiError, errorMessage } from "@/lib/api";
 import { BRANCHES, type Job, type JobType } from "@/lib/data";
@@ -59,6 +60,7 @@ export default function PostJobForm({ editId }: { editId?: string }) {
   const [error, setError] = useState<string | null>(null);
   const [fields, setFields] = useState<Record<string, string>>({});
   const [result, setResult] = useState<"submitted" | "saved" | null>(null);
+  const [createdId, setCreatedId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!editId) return;
@@ -102,7 +104,11 @@ export default function PostJobForm({ editId }: { editId?: string }) {
         await api.put(`/company/jobs/${job.id}`, body());
         if (submit) await api.post(`/company/jobs/${job.id}/submit`);
       } else {
-        await api.post("/company/jobs", { ...body(), submit });
+        // A brand-new job can't be submitted in this same call — it has no
+        // selection rounds yet (rounds need the job to exist first), and the
+        // backend now requires at least one before it will accept a submit.
+        const created = await api.post<Job>("/company/jobs", { ...body(), submit: false });
+        setCreatedId(created.id);
       }
       setResult(submit ? "submitted" : "saved");
     } catch (e) {
@@ -128,23 +134,33 @@ export default function PostJobForm({ editId }: { editId?: string }) {
             ? "The placement cell will review your posting. It goes live to eligible students once approved."
             : job?.status === "Open"
               ? "Your posting has been updated."
-              : "Only you can see this draft. Submit it for approval from your postings when it's ready."}
+              : createdId
+                ? "Next, define the selection process — it's required before you can submit this for approval."
+                : "Only you can see this draft. Submit it for approval from your postings when it's ready."}
         </p>
         <div className="mt-6 flex justify-center gap-2">
-          {!job && (
-            <button
-              className="btn-outline"
-              onClick={() => {
-                setResult(null);
-                setForm(blank);
-              }}
-            >
-              Post another
-            </button>
+          {createdId ? (
+            <Link href={`/companies/post?edit=${createdId}`} className="btn-primary">
+              Define selection rounds
+            </Link>
+          ) : (
+            <>
+              {!job && (
+                <button
+                  className="btn-outline"
+                  onClick={() => {
+                    setResult(null);
+                    setForm(blank);
+                  }}
+                >
+                  Post another
+                </button>
+              )}
+              <Link href="/companies/jobs" className="btn-primary">
+                View postings
+              </Link>
+            </>
           )}
-          <Link href="/companies/jobs" className="btn-primary">
-            View postings
-          </Link>
         </div>
       </div>
     );
@@ -155,7 +171,9 @@ export default function PostJobForm({ editId }: { editId?: string }) {
       className="grid gap-6 lg:grid-cols-3"
       onSubmit={(e) => {
         e.preventDefault();
-        void save(job?.status !== "Open");
+        // A brand-new job is always saved as a draft first — see save()'s
+        // comment on why it can't be submitted before it has rounds.
+        void save(job ? job.status !== "Open" : false);
       }}
     >
       <div className="card space-y-4 p-5 lg:col-span-2">
@@ -250,7 +268,7 @@ export default function PostJobForm({ editId }: { editId?: string }) {
             <button type="submit" className="btn-primary flex-1" disabled={busy}>
               {busy ? "Saving…" : "Save changes"}
             </button>
-          ) : (
+          ) : job ? (
             <>
               <button type="button" className="btn-outline flex-1" disabled={busy} onClick={() => save(false)}>
                 Save draft
@@ -259,9 +277,22 @@ export default function PostJobForm({ editId }: { editId?: string }) {
                 {busy ? "Working…" : "Submit for approval"}
               </button>
             </>
+          ) : (
+            // Rounds need a job id to attach to, so a brand-new job can only be
+            // saved as a draft here — submitting for approval happens after
+            // defining its selection process below.
+            <button type="submit" className="btn-primary flex-1" disabled={busy}>
+              {busy ? "Saving…" : "Save draft & continue"}
+            </button>
           )}
         </div>
       </div>
+
+      {job && (
+        <div className="lg:col-span-3">
+          <RoundsEditor jobId={job.id} disabled={busy} />
+        </div>
+      )}
     </form>
   );
 }

@@ -7,7 +7,7 @@ import { Icon } from "./icons";
 import { Badge, CompanyLogo, EmptyState, ErrorState, Notice, Spinner } from "./ui";
 import Modal from "./Modal";
 import { api, errorMessage } from "@/lib/api";
-import { formatDate, payLabel, type Application, type Page, type StudentJob } from "@/lib/data";
+import { formatDate, formatRoundWhen, payLabel, type Application, type Page, type SelectionRound, type StudentJob } from "@/lib/data";
 import { useDebounced, useFetch } from "@/lib/hooks";
 
 type Sort = "deadline" | "ctc";
@@ -39,6 +39,7 @@ export default function JobsBoard() {
 
   const q = useDebounced(query.trim());
   const jobs = useFetch<Page<StudentJob>>("/jobs", { q, type: type === "All" ? undefined : type, eligible: eligibleOnly || undefined, sort, page, limit: PAGE_SIZE });
+  const rounds = useFetch<{ items: SelectionRound[] }>(selected ? `/jobs/${selected.id}/rounds` : null);
 
   // /students/jobs?job=<id> (used by notification links) opens that job's details.
   const jobParam = useSearchParams().get("job");
@@ -255,6 +256,25 @@ export default function JobsBoard() {
             <li>Openings: {selected.openings}</li>
             <li>Application deadline: {formatDate(selected.deadline)}</li>
           </ul>
+          {rounds.data && rounds.data.items.length > 0 && (
+            <>
+              <h4 className="mb-2 mt-5 text-sm font-semibold">Selection process</h4>
+              <ol className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
+                {rounds.data.items.map((r, i) => (
+                  <li key={r.id} className="rounded-lg border border-slate-100 p-3 dark:border-slate-800">
+                    <p className="font-medium text-slate-800 dark:text-slate-200">
+                      {i + 1}. {r.name} · {r.mode}
+                    </p>
+                    <p>
+                      {formatRoundWhen(r.scheduledAt)} · {r.durationMinutes} min
+                      {r.location ? ` · ${r.location}` : ""}
+                    </p>
+                    {r.instructions && <p className="mt-1 text-xs">{r.instructions}</p>}
+                  </li>
+                ))}
+              </ol>
+            </>
+          )}
           {selected.skills.length > 0 && (
             <>
               <h4 className="mb-2 mt-5 text-sm font-semibold">Skills</h4>

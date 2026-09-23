@@ -168,6 +168,29 @@ export interface StudentDrive extends Drive {
   blockReason: BlockReason | null;
 }
 
+export type RoundMode = "Online" | "Offline";
+export type RoundStatus = "Upcoming" | "Scheduled" | "Cleared" | "Rejected";
+
+/** One step in a job's company-defined selection process. */
+export interface SelectionRound {
+  id: string;
+  seq: number;
+  name: string;
+  mode: RoundMode;
+  scheduledAt: string | null; // ISO datetime
+  durationMinutes: number;
+  location: string; // venue, or a meeting link when mode is Online
+  instructions: string;
+  locked?: boolean; // company view only: a candidate has already progressed past Upcoming
+}
+
+/** A SelectionRound plus one application's status against it. */
+export interface RoundProgress extends SelectionRound {
+  status: RoundStatus;
+  note: string;
+  current: boolean; // the lowest-seq round not yet Cleared
+}
+
 export interface Notification {
   id: string;
   type: string;
@@ -211,6 +234,13 @@ export function initials(name: string) {
 /** Internships are stored as an annualised CTC; show them as a monthly stipend. */
 export function payLabel(j: { type: JobType; ctc: number }) {
   return j.type === "Internship" ? `₹${Math.round((j.ctc * 100) / 12)}k/mo` : `${j.ctc} LPA`;
+}
+
+/** A selection round's schedule, date and time together (formatDate alone drops the time). */
+export function formatRoundWhen(scheduledAt: string | null) {
+  if (!scheduledAt) return "Date to be announced";
+  const d = new Date(scheduledAt);
+  return `${formatDate(scheduledAt)}, ${d.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" })}`;
 }
 
 export function fileSize(bytes: number) {

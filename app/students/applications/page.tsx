@@ -4,10 +4,11 @@ import { useState } from "react";
 import { Icon } from "@/components/icons";
 import Modal from "@/components/Modal";
 import ReasonDialog from "@/components/ReasonDialog";
+import RoundsTimeline from "@/components/RoundsTimeline";
 import { CompanyLogo, ErrorState, Notice, PageHeader, Spinner, StageBadge } from "@/components/ui";
 import { api, errorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { formatDate, STAGES, type Application, type Stage } from "@/lib/data";
+import { formatDate, STAGES, type Application, type RoundProgress, type Stage } from "@/lib/data";
 import { useFetch } from "@/lib/hooks";
 
 const steps: Stage[] = ["Applied", "Shortlisted", "Interview", "Offered"];
@@ -50,6 +51,8 @@ export default function Applications() {
   const [busy, setBusy] = useState<string | null>(null);
   const [confirmAccept, setConfirmAccept] = useState<Application | null>(null);
   const [declining, setDeclining] = useState<Application | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const roundsFetch = useFetch<{ items: RoundProgress[] }>(expandedId ? `/me/applications/${expandedId}/rounds` : null);
 
   if (apps.loading && !apps.data) return <Spinner />;
   if (apps.error) return <ErrorState message={apps.error} onRetry={apps.reload} />;
@@ -140,6 +143,27 @@ export default function Applications() {
                     </span>
                   ))}
                 </div>
+                {a.stage !== "Rejected" && a.stage !== "Withdrawn" && (
+                  <button
+                    className="mt-2 text-xs font-medium text-indigo-600 dark:text-indigo-300"
+                    onClick={() => setExpandedId(expandedId === a.id ? null : a.id)}
+                  >
+                    {expandedId === a.id ? "Hide" : "View"} round-by-round progress
+                  </button>
+                )}
+                {expandedId === a.id && (
+                  <div className="mt-3 border-t border-slate-100 pt-3 dark:border-slate-800">
+                    {roundsFetch.loading && !roundsFetch.data ? (
+                      <p className="text-sm text-slate-500 dark:text-slate-400">Loading…</p>
+                    ) : roundsFetch.error ? (
+                      <p className="text-sm text-rose-600 dark:text-rose-400">{roundsFetch.error}</p>
+                    ) : !roundsFetch.data || roundsFetch.data.items.length === 0 ? (
+                      <p className="text-sm text-slate-500 dark:text-slate-400">This company hasn&apos;t published a round-by-round selection process for this job.</p>
+                    ) : (
+                      <RoundsTimeline rounds={roundsFetch.data.items} />
+                    )}
+                  </div>
+                )}
                 {a.offer?.status === "Accepted" && <p className="mt-3 text-sm font-medium text-emerald-600 dark:text-emerald-400">You accepted this offer ({a.offer.ctc} LPA).</p>}
                 {(pending || LIVE.includes(a.stage)) && (
                   <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
